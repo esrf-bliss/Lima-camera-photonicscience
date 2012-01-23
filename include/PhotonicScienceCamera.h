@@ -25,6 +25,7 @@
 #include "Debug.h"
 #include "SizeUtils.h"
 #include "HwBufferMgr.h"
+#include "PhotonicScienceCompatibility.h"
 
 namespace lima
 {
@@ -64,7 +65,7 @@ namespace lima
      * \class Camera
      * \brief object controlling the photonicscience camera via Pylon driver
      *******************************************************************/
-    class Camera
+    class LIBPHOTONICSCIENCE_API Camera
     {
       DEB_CLASS_NAMESPC(DebModCamera, "Camera", "PhotonicScience");
       friend class Interface;
