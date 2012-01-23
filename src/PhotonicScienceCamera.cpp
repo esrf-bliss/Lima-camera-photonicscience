@@ -47,13 +47,20 @@ class Camera::_AcqThread : public Thread
 //- Ctor
 //---------------------------
 Camera::Camera(const std::string &dllName) :
+  
+  m_acq_thread(NULL),
   m_trigger_mode(IntTrig),
   m_exp_time(1.),
+  m_image_number(0),
+  m_nb_frames(1),
+  m_thread_running(false),
+  m_wait_flag(true),
+  m_quit(false)
 {
   DEB_CONSTRUCTOR();
 
-  m_hDLL = LoadLibrary(dllName.c_str());
-  if(!hDLL)
+  m_hDLL = LoadLibrary((LPCWSTR)dllName.c_str());
+  if(!m_hDLL)
     THROW_HW_ERROR(Error) << "Can't load library: " << dllName;
 
   //Part
@@ -85,6 +92,9 @@ Camera::Camera(const std::string &dllName) :
   m_Return_height = (Return_height)GetProcAddress(m_hDLL,"PSL_VHR_Return_height");
 
   m_Free = (Free)GetProcAddress(m_hDLL,"PSL_VHR_Free");
+
+  m_acq_thread = new _AcqThread(*this);
+  m_acq_thread->start();
 }
 
 //---------------------------
@@ -105,14 +115,24 @@ void Camera::startAcq()
   DEB_MEMBER_FUNCT();
 
   m_image_number=0;
-        
+  
+  AutoMutex aLock(m_cond.mutex());
+  m_wait_flag = false;
+  m_cond.broadcast();
+  // Wait that Acq thread start if it's an external trigger 
+  while(m_trigger_mode == ExtTrigMult && !m_thread_running)
+    m_cond.wait();
 }
 //---------------------------
 //- Camera::stopAcq()
 //---------------------------
 void Camera::stopAcq()
 {
-
+  AutoMutex aLock(m_cond.mutex());
+  m_wait_flag = true;
+  m_abort_snap();
+  while(m_thread_running)
+    m_cond.wait();
 }
 //---------------------------
 //- Camera::_AcqThread::threadFunction()
@@ -138,8 +158,34 @@ void Camera::_AcqThread::threadFunction()
     
       m_cam.m_cond.broadcast();
       aLock.unlock();
-
-      //@todo do the acquisition
+      
+      bool continueFlag = true;
+      while(continueFlag && 
+	    (!m_cam.m_nb_frames || m_cam.m_nb_frames < m_cam.m_image_number))
+	{
+	  m_cam.m_Snap_and_return();
+	  while(continueFlag)
+	    {
+	      bool finishedFlag = m_cam.m_Get_snap_status();
+	      if(finishedFlag)
+		{
+		  unsigned short* aSrcPt = m_cam.m_Get_image_pointer();
+		  void* aDstPt = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
+		  const FrameDim& fDim = buffer_mgr.getFrameDim();
+		  memcpy(aDstPt,aSrcPt,fDim.getMemSize());
+		  HwFrameInfoType frame_info;
+		  frame_info.acq_frame_nb = m_cam.m_image_number;
+		  continueFlag = buffer_mgr.newFrameReady(frame_info);
+		  ++m_cam.m_image_number;
+		  break;
+		}
+	      else
+		{
+		  AutoMutex aLock(m_cam.m_cond.mutex());
+		  continueFlag = !m_cam.m_wait_flag;
+		}
+	    }
+	}
     }
 }
 
@@ -149,7 +195,7 @@ void Camera::_AcqThread::threadFunction()
 Camera::_AcqThread::_AcqThread(Camera &aCam) :
                     m_cam(aCam)
 {
-    pthread_attr_setscope(&m_thread_attr,PTHREAD_SCOPE_PROCESS);
+  pthread_attr_setscope(&m_thread_attr,PTHREAD_SCOPE_PROCESS);
 }
 //-----------------------------------------------------
 //
@@ -157,10 +203,10 @@ Camera::_AcqThread::_AcqThread(Camera &aCam) :
 
 Camera::_AcqThread::~_AcqThread()
 {
-    AutoMutex aLock(m_cam.m_cond.mutex());
-    m_cam.m_quit = true;
-    m_cam.m_cond.broadcast();
-    aLock.unlock();
+  AutoMutex aLock(m_cam.m_cond.mutex());
+  m_cam.m_quit = true;
+  m_cam.m_cond.broadcast();
+  aLock.unlock();
 }
 
 //-----------------------------------------------------
@@ -168,14 +214,14 @@ Camera::_AcqThread::~_AcqThread()
 //-----------------------------------------------------
 void Camera::getDetectorImageSize(Size& size)
 {
-    DEB_MEMBER_FUNCT();
+  DEB_MEMBER_FUNCT();
 
-    int maxWidth,maxHeight;
-    m_ReadMaxImageWidth(&maxWidth);
-    m_ReadMaxImageHeight(&maxHeight);
-    size = Size(maxWidth,maxHeight);
+  int maxWidth,maxHeight;
+  m_ReadMaxImageWidth(&maxWidth);
+  m_ReadMaxImageHeight(&maxHeight);
+  size = Size(maxWidth,maxHeight);
 
-    DEB_RETURN() << DEB_VAR1(size);
+  DEB_RETURN() << DEB_VAR1(size);
 }
 
 
@@ -200,7 +246,7 @@ void Camera::setImageType(ImageType type)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getDetectorType(string& type)
+void Camera::getDetectorType(std::string& type)
 {
   DEB_MEMBER_FUNCT();
   type = "PhotonicScience";
@@ -209,11 +255,10 @@ void Camera::getDetectorType(string& type)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getDetectorModel(string& type)
+void Camera::getDetectorModel(std::string& type)
 {
-    DEB_MEMBER_FUNCT();
-    type = m_get_camera_identifier();
-    return;        
+  DEB_MEMBER_FUNCT();
+  type = m_get_camera_identifier();
 }
 
 //-----------------------------------------------------
@@ -221,7 +266,7 @@ void Camera::getDetectorModel(string& type)
 //-----------------------------------------------------
 HwBufferCtrlObj* Camera::getBufferMgr()
 {
-    return &m_buffer_ctrl_mgr;
+  return &m_buffer_ctrl_mgr;
 }
 
 //-----------------------------------------------------
@@ -235,7 +280,7 @@ void Camera::setTrigMode(TrigMode mode)
   int tmode;
   switch(mode)
     {
-    case ExtTrigMult: 	tmode = 2,break;
+    case ExtTrigMult: 	tmode = 2;break;
     default: 		tmode = 1;break;
     }
 
@@ -249,9 +294,9 @@ void Camera::setTrigMode(TrigMode mode)
 //-----------------------------------------------------
 void Camera::getTrigMode(TrigMode& mode)
 {
-    DEB_MEMBER_FUNCT();
-    mode = m_trigger_mode;
-    DEB_RETURN() << DEB_VAR1(mode);
+  DEB_MEMBER_FUNCT();
+  mode = m_trigger_mode;
+  DEB_RETURN() << DEB_VAR1(mode);
 }
 
 
@@ -260,13 +305,13 @@ void Camera::getTrigMode(TrigMode& mode)
 //-----------------------------------------------------
 void Camera::setExpTime(double exp_time)
 {
-    DEB_MEMBER_FUNCT();
-    DEB_PARAM() << DEB_VAR1(exp_time);
+  DEB_MEMBER_FUNCT();
+  DEB_PARAM() << DEB_VAR1(exp_time);
     
-    if(!m_WriteExposure(exp_time * 1000))
-      THROW_HW_ERROR(Error) << "Can't set exposure to : " << DEB_VAR1(exp_time);
+  if(!m_WriteExposure(int(exp_time * 1000.)))
+    THROW_HW_ERROR(Error) << "Can't set exposure to : " << DEB_VAR1(exp_time);
 
-    m_exp_time = exp_time;
+  m_exp_time = exp_time;
 }
 
 //-----------------------------------------------------
@@ -274,9 +319,9 @@ void Camera::setExpTime(double exp_time)
 //-----------------------------------------------------
 void Camera::getExpTime(double& exp_time)
 {
-    DEB_MEMBER_FUNCT();
-    exp_time = m_exp_time;            
-    DEB_RETURN() << DEB_VAR1(exp_time);
+  DEB_MEMBER_FUNCT();
+  exp_time = m_exp_time;            
+  DEB_RETURN() << DEB_VAR1(exp_time);
 }
 
 //-----------------------------------------------------
@@ -284,9 +329,9 @@ void Camera::getExpTime(double& exp_time)
 //-----------------------------------------------------
 void Camera::setLatTime(double lat_time)
 {
-    DEB_MEMBER_FUNCT();
-    if(lat_time != 0.)
-      THROW_HW_ERROR(Error) << "Latency not managed";
+  DEB_MEMBER_FUNCT();
+  if(lat_time != 0.)
+    THROW_HW_ERROR(Error) << "Latency not managed";
 }
 
 //-----------------------------------------------------
@@ -294,8 +339,8 @@ void Camera::setLatTime(double lat_time)
 //-----------------------------------------------------
 void Camera::getLatTime(double& lat_time)
 {
-    DEB_MEMBER_FUNCT();
-    lat_time = 0;
+  DEB_MEMBER_FUNCT();
+  lat_time = 0;
 }
 
 //-----------------------------------------------------
@@ -363,8 +408,6 @@ void Camera::setRoi(const Roi& set_roi)
 {
   DEB_MEMBER_FUNCT();
   DEB_PARAM() << DEB_VAR1(set_roi);
-  
-
 }
 
 //-----------------------------------------------------
@@ -391,9 +434,9 @@ void Camera::checkBin(Bin &aBin)
 //-----------------------------------------------------
 void Camera::setBin(const Bin &aBin)
 {
-    DEB_MEMBER_FUNCT();
+  DEB_MEMBER_FUNCT();
 
-    DEB_RETURN() << DEB_VAR1(aBin);
+  DEB_RETURN() << DEB_VAR1(aBin);
 }
 
 //-----------------------------------------------------
@@ -401,8 +444,8 @@ void Camera::setBin(const Bin &aBin)
 //-----------------------------------------------------
 void Camera::getBin(Bin &aBin)
 {
-    DEB_MEMBER_FUNCT();
-    DEB_RETURN() << DEB_VAR1(aBin);
+  DEB_MEMBER_FUNCT();
+  DEB_RETURN() << DEB_VAR1(aBin);
 }
 
 //---------------------------
@@ -411,5 +454,10 @@ void Camera::getBin(Bin &aBin)
 void Camera::reset(void)
 {
     
+}
+bool Camera::isAcqRunning() const
+{
+  AutoMutex aLock(m_cond.mutex());
+  return m_thread_running;
 }
 //---------------------------

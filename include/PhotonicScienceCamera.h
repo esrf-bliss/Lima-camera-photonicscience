@@ -22,7 +22,9 @@
 #ifndef PHOTONICSCIENCECAMERA_H
 #define PHOTONICSCIENCECAMERA_H
 
-#include <windows.h>
+#include "Debug.h"
+#include "SizeUtils.h"
+#include "HwBufferMgr.h"
 
 namespace lima
 {
@@ -110,11 +112,13 @@ namespace lima
       void getBin(Bin&);
 
       void reset(void);
+
+      bool isAcqRunning() const;
+
     private:
       class _AcqThread;
       friend class _AcqThread;
 
-      HINSTANCE 			m_hDLL;
       //Function pointer of the library
       Init 				m_Init;
       get_camera_identifier 		m_get_camera_identifier;
@@ -144,6 +148,19 @@ namespace lima
       Return_height 			m_Return_height;
 
       Free 				m_Free;
+
+      // Variables
+      HINSTANCE 			m_hDLL;
+      _AcqThread*			m_acq_thread;
+      TrigMode				m_trigger_mode;
+      double				m_exp_time;
+      int				m_image_number;
+      int				m_nb_frames;
+      bool				m_thread_running;
+      bool				m_wait_flag;
+      bool				m_quit;
+      SoftBufferCtrlMgr			m_buffer_ctrl_mgr;
+      mutable Cond			m_cond;
     };
   } // namespace PhotonicScience
 } // namespace lima

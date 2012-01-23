@@ -30,12 +30,6 @@ namespace lima
   namespace PhotonicScience
   {
     class Interface;
-
-    /*******************************************************************
-     * \class DetInfoCtrlObj
-     * \brief Control object providing PhotonicScience detector info interface
-     *******************************************************************/
-
     class DetInfoCtrlObj : public HwDetInfoCtrlObj
     {
       DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj", "PhotonicScience");
@@ -55,17 +49,12 @@ namespace lima
       virtual void getDetectorType(std::string& det_type);
       virtual void getDetectorModel(std::string& det_model);
 
-      virtual void registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
-      virtual void unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
+      virtual void registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb){};
+      virtual void unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb){};
 
     private:
       Camera& m_cam;
     };
-
-    /*******************************************************************
-     * \class SyncCtrlObj
-     * \brief Control object providing PhotonicScience synchronization interface
-     *******************************************************************/
 
     class SyncCtrlObj : public HwSyncCtrlObj
     {
@@ -94,10 +83,19 @@ namespace lima
       Camera& m_cam;
     };
 
-    /*******************************************************************
-     * \class RoiCtrlObj
-     * \brief Control object providing PhotonicScience Roi interface
-     *******************************************************************/
+    class BinCtrlObj : public HwBinCtrlObj
+    {
+    public:
+      BinCtrlObj(Camera& cam);
+      virtual ~BinCtrlObj() {}
+  
+      virtual void setBin(const Bin& bin);
+      virtual void getBin(Bin& bin);
+      //allow all binning
+      virtual void checkBin(Bin& bin);
+    private:
+      Camera& m_cam;
+    };
 
     class RoiCtrlObj : public HwRoiCtrlObj
     {
@@ -114,29 +112,6 @@ namespace lima
     private:
       Camera& m_cam;
     };
-
-    /*******************************************************************
-     * \class BinCtrlObj
-     * \brief Control object providing PhotonicScience Bin interface
-     *******************************************************************/
-    class BinCtrlObj : public HwBinCtrlObj
-    {
-    public:
-      BinCtrlObj(Camera& cam);
-      virtual ~BinCtrlObj() {}
-  
-      virtual void setBin(const Bin& bin);
-      virtual void getBin(Bin& bin);
-      //allow all binning
-      virtual void checkBin(Bin& bin);
-    private:
-      Camera& m_cam;
-    };
-
-    /*******************************************************************
-     * \class Interface
-     * \brief PhotonicScience hardware interface
-     *******************************************************************/
 
     class Interface : public HwInterface
     {
