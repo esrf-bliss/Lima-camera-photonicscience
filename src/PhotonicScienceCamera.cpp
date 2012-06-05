@@ -58,8 +58,15 @@ Camera::Camera(const std::string &dllName) :
   m_quit(false)
 {
   DEB_CONSTRUCTOR();
+  //Convert string to WideChar
+  int len = MultiByteToWideChar(CP_ACP,0,dllName.c_str(), dllName.length() + 1,0,0);
+  wchar_t* dllName_wchar = new wchar_t[len];
+  MultiByteToWideChar(CP_ACP, 0, dllName.c_str(), dllName.length() + 1,dllName_wchar,len);
+  
+  m_hDLL = LoadLibrary(dllName_wchar);
 
-  m_hDLL = LoadLibrary((LPCWSTR)dllName.c_str());
+  delete [] dllName_wchar;
+
   if(!m_hDLL)
     THROW_HW_ERROR(Error) << "Can't load library: " << dllName;
 
@@ -141,7 +148,7 @@ void Camera::_AcqThread::threadFunction()
 {
   DEB_MEMBER_FUNCT();
   AutoMutex aLock(m_cam.m_cond.mutex());
-  StdBufferCbMgr& buffer_mgr = m_cam.m_buffer_ctrl_mgr.getBuffer();
+  StdBufferCbMgr& buffer_mgr = m_cam.m_buffer_ctrl_obj.getBuffer();
 
   while(!m_cam.m_quit)
     {
@@ -161,7 +168,7 @@ void Camera::_AcqThread::threadFunction()
       
       bool continueFlag = true;
       while(continueFlag && 
-	    (!m_cam.m_nb_frames || m_cam.m_nb_frames < m_cam.m_image_number))
+	    (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
 	{
 	  m_cam.m_Snap_and_return();
 	  while(continueFlag)
@@ -264,9 +271,9 @@ void Camera::getDetectorModel(std::string& type)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-HwBufferCtrlObj* Camera::getBufferMgr()
+HwBufferCtrlObj* Camera::getBufferObj()
 {
-  return &m_buffer_ctrl_mgr;
+  return &m_buffer_ctrl_obj;
 }
 
 //-----------------------------------------------------
@@ -330,6 +337,8 @@ void Camera::getExpTime(double& exp_time)
 void Camera::setLatTime(double lat_time)
 {
   DEB_MEMBER_FUNCT();
+  DEB_PARAM() << DEB_VAR1(lat_time);
+
   if(lat_time != 0.)
     THROW_HW_ERROR(Error) << "Latency not managed";
 }

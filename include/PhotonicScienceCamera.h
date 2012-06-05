@@ -85,7 +85,7 @@ namespace lima
       void getDetectorImageSize(Size& size);
     
       // -- Buffer control object
-      HwBufferCtrlObj* getBufferMgr();
+      HwBufferCtrlObj* getBufferObj();
     
       //-- Synch control object
       void setTrigMode(TrigMode  mode);
@@ -160,7 +160,7 @@ namespace lima
       bool				m_thread_running;
       bool				m_wait_flag;
       bool				m_quit;
-      SoftBufferCtrlMgr			m_buffer_ctrl_mgr;
+      SoftBufferCtrlObj			m_buffer_ctrl_obj;
       mutable Cond			m_cond;
     };
   } // namespace PhotonicScience

@@ -37,7 +37,7 @@ Interface::Interface(Camera& cam)
   HwDetInfoCtrlObj *det_info = &m_det_info;
   m_cap_list.push_back(HwCap(det_info));
 
-  m_cap_list.push_back(HwCap(cam.getBufferMgr()));
+  m_cap_list.push_back(HwCap(cam.getBufferObj()));
     
   HwSyncCtrlObj *sync = &m_sync;
   m_cap_list.push_back(HwCap(sync));
@@ -397,7 +397,7 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
   double max_time = 1e6;
   valid_ranges.min_exp_time = min_time;
   valid_ranges.max_exp_time = max_time;
-  valid_ranges.min_lat_time = min_time;
-  valid_ranges.max_lat_time = max_time;
+  valid_ranges.min_lat_time = 0.; // Don't know
+  valid_ranges.max_lat_time = 0.; // Don't know
 }
 
