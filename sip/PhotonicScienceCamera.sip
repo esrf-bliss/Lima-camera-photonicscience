@@ -27,7 +27,7 @@ namespace PhotonicScience
 #include <PhotonicScienceCamera.h>
 %End
   public:
-    Camera(const std::string &dllName);
+    Camera(const std::string &dllName,const std::string &camera_files_path = "");
     ~Camera();
 
     void startAcq();

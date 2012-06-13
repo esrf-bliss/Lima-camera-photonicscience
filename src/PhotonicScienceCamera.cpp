@@ -19,6 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //############################################################################
+#include <direct.h>
 #include "PhotonicScienceCamera.h"
 
 using namespace lima;
@@ -46,7 +47,8 @@ class Camera::_AcqThread : public Thread
 //---------------------------
 //- Ctor
 //---------------------------
-Camera::Camera(const std::string &dllName) :
+Camera::Camera(const std::string &dllName,
+	       const std::string &camera_files_path_par) :
   
   m_acq_thread(NULL),
   m_trigger_mode(IntTrig),
@@ -64,7 +66,6 @@ Camera::Camera(const std::string &dllName) :
   MultiByteToWideChar(CP_ACP, 0, dllName.c_str(), dllName.length() + 1,dllName_wchar,len);
   
   m_hDLL = LoadLibrary(dllName_wchar);
-
   delete [] dllName_wchar;
 
   if(!m_hDLL)
@@ -100,6 +101,30 @@ Camera::Camera(const std::string &dllName) :
 
   m_Free = (Free)GetProcAddress(m_hDLL,"PSL_VHR_Free");
 
+  std::string camera_files_path;
+  if(camera_files_path_par.empty())
+    {
+      char pwdBuffer[1024];
+      _getcwd(pwdBuffer,sizeof(pwdBuffer));
+      size_t slashPos = dllName.rfind("\\");
+      if(slashPos != std::string::npos)
+	{
+	  camera_files_path = pwdBuffer;
+	  camera_files_path += '\\';
+	  camera_files_path += dllName.substr(0,slashPos);
+	  camera_files_path += '\\';
+	  camera_files_path += "PSL_camera_files";
+	}
+    }
+  else
+    camera_files_path = camera_files_path_par;
+  int initStatus = -1;
+  if(m_Init)
+    initStatus = m_Init((char*)camera_files_path.c_str());
+
+  if(initStatus)
+    THROW_HW_ERROR(Error) << "Camera init failed: " << DEB_VAR2(dllName,camera_files_path);
+
   m_acq_thread = new _AcqThread(*this);
   m_acq_thread->start();
 }
@@ -123,6 +148,9 @@ void Camera::startAcq()
 
   m_image_number=0;
   
+  StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
+  buffer_mgr.setStartTimestamp(Timestamp::now());
+
   AutoMutex aLock(m_cond.mutex());
   m_wait_flag = false;
   m_cond.broadcast();
@@ -153,12 +181,12 @@ void Camera::_AcqThread::threadFunction()
   while(!m_cam.m_quit)
     {
       while(m_cam.m_wait_flag && !m_cam.m_quit)
-        {
-          DEB_TRACE() << "Wait";
-          m_cam.m_thread_running = false;
-          m_cam.m_cond.broadcast();
-          m_cam.m_cond.wait();
-        }
+	{
+	  DEB_TRACE() << "Wait";
+	  m_cam.m_thread_running = false;
+	  m_cam.m_cond.broadcast();
+	  m_cam.m_cond.wait();
+	}
       DEB_TRACE() << "Run";
       m_cam.m_thread_running = true;
       if(m_cam.m_quit) return;
@@ -176,6 +204,7 @@ void Camera::_AcqThread::threadFunction()
 	      bool finishedFlag = m_cam.m_Get_snap_status();
 	      if(finishedFlag)
 		{
+		  m_cam.m_grab_exposed_image();
 		  unsigned short* aSrcPt = m_cam.m_Get_image_pointer();
 		  void* aDstPt = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
 		  const FrameDim& fDim = buffer_mgr.getFrameDim();
@@ -193,6 +222,8 @@ void Camera::_AcqThread::threadFunction()
 		}
 	    }
 	}
+      aLock.lock();
+      m_cam.m_wait_flag = true;
     }
 }
 
@@ -200,7 +231,7 @@ void Camera::_AcqThread::threadFunction()
 //
 //-----------------------------------------------------
 Camera::_AcqThread::_AcqThread(Camera &aCam) :
-                    m_cam(aCam)
+  m_cam(aCam)
 {
   pthread_attr_setscope(&m_thread_attr,PTHREAD_SCOPE_PROCESS);
 }

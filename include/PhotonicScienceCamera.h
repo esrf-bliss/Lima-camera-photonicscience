@@ -70,7 +70,8 @@ namespace lima
       DEB_CLASS_NAMESPC(DebModCamera, "Camera", "PhotonicScience");
       friend class Interface;
     public:
-      Camera(const std::string &dllName);
+      Camera(const std::string &dllName,
+	     const std::string &camera_files_path = "");
       ~Camera();
 
       void startAcq();
