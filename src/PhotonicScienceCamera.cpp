@@ -57,7 +57,9 @@ Camera::Camera(const std::string &dllName,
   m_nb_frames(1),
   m_thread_running(false),
   m_wait_flag(true),
-  m_quit(false)
+  m_quit(false),
+  m_shutter_mode(SLOW),
+  m_shutter_enable(false)
 {
   DEB_CONSTRUCTOR();
   //Convert string to WideChar
@@ -499,5 +501,35 @@ bool Camera::isAcqRunning() const
 {
   AutoMutex aLock(m_cond.mutex());
   return m_thread_running;
+}
+
+Camera::ShutterMode Camera::getShutterMode() const
+{
+  AutoMutex aLock(m_cond.mutex());
+  return m_shutter_mode;
+}
+void Camera::setShutterMode(ShutterMode mode)
+{
+  AutoMutex aLock(m_cond.mutex());
+  m_set_virtual_shutter_mode(mode);
+  m_shutter_mode = mode;
+}
+bool Camera::isVirtualShutterEnable() const
+{
+  AutoMutex aLock(m_cond.mutex());
+  return m_shutter_enable;
+}
+
+void Camera::setVirtualShutterEnable(bool flag)
+{
+  AutoMutex aLock(m_cond.mutex());
+  m_enable_virtual_shuttering(flag);
+  m_shutter_enable = flag;
+}
+
+void Camera::setShutterParameters(int iShutterStartOffset,int iShutterEndOffset,int iShutterPedestal)
+{
+  AutoMutex aLock(m_cond.mutex());
+  m_set_shutter_parameters(iShutterStartOffset,iShutterEndOffset,iShutterPedestal);
 }
 //---------------------------

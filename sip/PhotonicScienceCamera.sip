@@ -69,5 +69,15 @@ namespace PhotonicScience
     void reset();
 
     bool isAcqRunning() const;
+
+    // --- Photonics specifics
+    enum ShutterMode {OFF = 2,FAST = 0,SLOW = 1};
+    ShutterMode getShutterMode() const;
+    void setShutterMode(ShutterMode);
+    
+    bool isVirtualShutterEnable() const;
+    void setVirtualShutterEnable(bool);
+    
+    void setShutterParameters(int,int,int);
   };
 };
