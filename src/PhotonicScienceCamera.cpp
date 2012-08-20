@@ -167,7 +167,8 @@ void Camera::stopAcq()
 {
   AutoMutex aLock(m_cond.mutex());
   m_wait_flag = true;
-  m_abort_snap();
+  if(m_trigger_mode == IntTrig)
+    m_abort_snap();
   while(m_thread_running)
     m_cond.wait();
 }
@@ -200,7 +201,8 @@ void Camera::_AcqThread::threadFunction()
       while(continueFlag && 
 	    (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
 	{
-	  m_cam.m_Snap_and_return();
+	  if(m_cam.m_trigger_mode == IntTrig)
+	    m_cam.m_Snap_and_return();
 	  while(continueFlag)
 	    {
 	      bool finishedFlag = m_cam.m_Get_snap_status();
@@ -226,6 +228,17 @@ void Camera::_AcqThread::threadFunction()
 	}
       aLock.lock();
       m_cam.m_wait_flag = true;
+      /** Camera don 't finished well when Ext trigger is used
+	  Force an other soft acquisition at the end.
+	  This is really bad but....
+	  @todo ask for a fix
+      */
+      if(m_cam.m_trigger_mode == ExtTrigMult)
+	{
+	  m_cam.m_Set_trigger_mode(1);
+	  m_cam.setExpTime(1e-6);
+	  m_cam.m_Snap_and_return();
+	}
     }
 }
 
