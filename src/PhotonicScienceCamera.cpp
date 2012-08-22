@@ -127,6 +127,10 @@ Camera::Camera(const std::string &dllName,
   if(initStatus)
     THROW_HW_ERROR(Error) << "Camera init failed: " << DEB_VAR2(dllName,camera_files_path);
 
+  int maxWidth,maxHeight;
+  m_ReadMaxImageWidth(&maxWidth);
+  m_ReadMaxImageHeight(&maxHeight);
+  m_Set_subarea_and_binning(0,0,maxWidth - 1,maxHeight - 1,1,1);
   m_acq_thread = new _AcqThread(*this);
   m_acq_thread->start();
 }
@@ -167,8 +171,7 @@ void Camera::stopAcq()
 {
   AutoMutex aLock(m_cond.mutex());
   m_wait_flag = true;
-  if(m_trigger_mode == IntTrig)
-    m_abort_snap();
+  m_abort_snap();
   while(m_thread_running)
     m_cond.wait();
 }
@@ -201,8 +204,7 @@ void Camera::_AcqThread::threadFunction()
       while(continueFlag && 
 	    (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
 	{
-	  if(m_cam.m_trigger_mode == IntTrig)
-	    m_cam.m_Snap_and_return();
+	  m_cam.m_Snap_and_return();
 	  while(continueFlag)
 	    {
 	      bool finishedFlag = m_cam.m_Get_snap_status();
@@ -272,7 +274,7 @@ void Camera::getDetectorImageSize(Size& size)
   int maxWidth,maxHeight;
   m_ReadMaxImageWidth(&maxWidth);
   m_ReadMaxImageHeight(&maxHeight);
-  size = Size(maxWidth,maxHeight);
+  size = Size(maxWidth - 1,maxHeight - 1);
 
   DEB_RETURN() << DEB_VAR1(size);
 }
