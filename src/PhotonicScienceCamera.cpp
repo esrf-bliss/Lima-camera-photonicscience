@@ -62,6 +62,11 @@ Camera::Camera(const std::string &dllName,
   m_shutter_enable(false)
 {
   DEB_CONSTRUCTOR();
+  m_acq_thread = new _AcqThread(*this);
+  m_acq_thread->start();
+  while(m_thread_running)
+    m_cond.wait();
+
   //Convert string to WideChar
   int len = MultiByteToWideChar(CP_ACP,0,dllName.c_str(), dllName.length() + 1,0,0);
   wchar_t* dllName_wchar = new wchar_t[len];
@@ -91,6 +96,9 @@ Camera::Camera(const std::string &dllName,
   m_Set_trigger_mode = (Set_trigger_mode)GetProcAddress(m_hDLL,"PSL_VHR_Set_trigger_mode");
   m_set_required_operating_temp = (set_required_operating_temp)GetProcAddress(m_hDLL,"PSL_VHR_set_required_operating_temp");
   m_read_current_temp = (read_current_temp)GetProcAddress(m_hDLL,"PSL_VHR_read_current_temp");
+
+  m_Is_intensifier_fitted = (Is_intensifier_fitted)GetProcAddress(m_hDLL,"PSL_VHR_Is_intensifier_fitted");
+  m_WriteIntensifierGain = (WriteIntensifierGain)GetProcAddress(m_hDLL,"PSL_VHR_WriteIntensifierGain");
 
   m_Snap_and_return = (Snap_and_return)GetProcAddress(m_hDLL,"PSL_VHR_Snap_and_return");
   m_abort_snap = (abort_snap)GetProcAddress(m_hDLL,"PSL_VHR_abort_snap");
@@ -131,8 +139,6 @@ Camera::Camera(const std::string &dllName,
   m_ReadMaxImageWidth(&maxWidth);
   m_ReadMaxImageHeight(&maxHeight);
   m_Set_subarea_and_binning(0,0,maxWidth - 1,maxHeight - 1,1,1);
-  m_acq_thread = new _AcqThread(*this);
-  m_acq_thread->start();
 }
 
 //---------------------------
@@ -544,7 +550,30 @@ void Camera::setVirtualShutterEnable(bool flag)
 
 void Camera::setShutterParameters(int iShutterStartOffset,int iShutterEndOffset,int iShutterPedestal)
 {
-  AutoMutex aLock(m_cond.mutex());
   m_set_shutter_parameters(iShutterStartOffset,iShutterEndOffset,iShutterPedestal);
+}
+
+void Camera::setOperatingTemp(int temp)
+{
+  DEB_MEMBER_FUNCT();
+  
+  if(!m_set_required_operating_temp(temp))
+    THROW_HW_ERROR(Error) << "Can't set temperature to value:" << DEB_VAR1(temp);
+}
+
+int Camera::readCurrentTemp() const
+{
+  return m_read_current_temp();
+}
+
+void Camera::setIntensifierGain(int gain)
+{
+  DEB_MEMBER_FUNCT();
+  
+  if(!m_Is_intensifier_fitted || !m_Is_intensifier_fitted())
+    THROW_HW_ERROR(Error) << "Camera don't have Intensifier";
+
+  if(!m_WriteIntensifierGain(gain))
+    THROW_HW_ERROR(Error) << "Can't set gain to: " << DEB_VAR1(gain);
 }
 //---------------------------

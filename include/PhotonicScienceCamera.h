@@ -49,6 +49,9 @@ namespace lima
     typedef bool (*Set_trigger_mode)(int);
     typedef bool (*set_required_operating_temp)(int);
     typedef int (*read_current_temp)();
+    
+    typedef bool (*Is_intensifier_fitted)();
+    typedef bool (*WriteIntensifierGain)(unsigned short);
 
     typedef bool (*Snap_and_return)();
     typedef bool (*abort_snap)();
@@ -118,6 +121,7 @@ namespace lima
       bool isAcqRunning() const;
 
       // --- Photonics specifics
+      // *** Virtual Shutter
       enum ShutterMode {OFF = 2,FAST = 0,SLOW = 1};
       ShutterMode getShutterMode() const;
       void setShutterMode(ShutterMode);
@@ -126,6 +130,11 @@ namespace lima
       void setVirtualShutterEnable(bool);
       
       void setShutterParameters(int,int,int);
+      // *** Camera temperature
+      void setOperatingTemp(int temp);
+      int readCurrentTemp() const;
+      // *** intensifier control
+      void setIntensifierGain(int gain);
     private:
       class _AcqThread;
       friend class _AcqThread;
@@ -148,6 +157,9 @@ namespace lima
       Set_trigger_mode 			m_Set_trigger_mode;
       set_required_operating_temp 	m_set_required_operating_temp;
       read_current_temp 		m_read_current_temp;
+
+      Is_intensifier_fitted		m_Is_intensifier_fitted;
+      WriteIntensifierGain		m_WriteIntensifierGain;
 
       Snap_and_return 			m_Snap_and_return;
       abort_snap 			m_abort_snap;
