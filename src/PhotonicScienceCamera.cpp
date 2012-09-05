@@ -216,11 +216,13 @@ void Camera::_AcqThread::threadFunction()
 	      bool finishedFlag = m_cam.m_Get_snap_status();
 	      if(finishedFlag)
 		{
+		  aLock.lock();
 		  m_cam.m_grab_exposed_image();
 		  unsigned short* aSrcPt = m_cam.m_Get_image_pointer();
 		  void* aDstPt = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
 		  const FrameDim& fDim = buffer_mgr.getFrameDim();
 		  memcpy(aDstPt,aSrcPt,fDim.getMemSize());
+		  aLock.unlock();
 		  HwFrameInfoType frame_info;
 		  frame_info.acq_frame_nb = m_cam.m_image_number;
 		  continueFlag = buffer_mgr.newFrameReady(frame_info);
