@@ -210,7 +210,8 @@ void Camera::_AcqThread::threadFunction()
       while(continueFlag && 
 	    (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
 	{
-	  m_cam.m_Snap_and_return();
+	  if(m_cam.m_trigger_mode != ExtTrigMult)
+	    m_cam.m_Snap_and_return();
 	  while(continueFlag)
 	    {
 	      bool finishedFlag = m_cam.m_Get_snap_status();
