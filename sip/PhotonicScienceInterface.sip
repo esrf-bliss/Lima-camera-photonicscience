@@ -27,7 +27,7 @@ namespace PhotonicScience
 #include <PhotonicScienceInterface.h>
 %End
   public:
-    Interface(PhotonicScience::Camera& cam);
+    Interface(PhotonicScience::Camera& cam /KeepReference/);
     virtual ~Interface();
 
     //- From HwInterface
