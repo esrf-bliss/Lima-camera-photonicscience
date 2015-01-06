@@ -22,7 +22,7 @@
 #ifndef PHOTONICSCIENCEINTERFACE_H
 #define PHOTONICSCIENCEINTERFACE_H
 
-#include "HwInterface.h"
+#include "lima/HwInterface.h"
 #include "PhotonicScienceCamera.h"
 #include "PhotonicScienceCompatibility.h"
 

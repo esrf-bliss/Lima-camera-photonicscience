@@ -22,9 +22,9 @@
 #ifndef PHOTONICSCIENCECAMERA_H
 #define PHOTONICSCIENCECAMERA_H
 
-#include "Debug.h"
-#include "SizeUtils.h"
-#include "HwBufferMgr.h"
+#include "lima/Debug.h"
+#include "lima/SizeUtils.h"
+#include "lima/HwBufferMgr.h"
 #include "PhotonicScienceCompatibility.h"
 
 namespace lima
