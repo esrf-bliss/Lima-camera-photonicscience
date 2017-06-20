@@ -30,19 +30,20 @@ IF(WIN32)
 	ADD_LIBRARY(limaphotonicscience SHARED ${photonic_srcs})
 
 	TARGET_INCLUDE_DIRECTORIES(limaphotonicscience PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+	#TARGET_INCLUDE_DIRECTORIES(limaphotonicscience PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/sdk/ImageStar4022_v2.5")
 	TARGET_INCLUDE_DIRECTORIES(limaphotonicscience PUBLIC "C:/XIS/SDK32")
 	
 	TARGET_COMPILE_DEFINITIONS(limaphotonicscience PRIVATE LIBPHOTONICSCIENCE_EXPORTS)
 	
-	#not in the vcproj
-	#FIND_LIBRARY(PHOTONICSCIENCE_LIB_XISL XISL "C:/XIS/SDK32")
-	#IF("${PHOTONICSCIENCE_LIB_XISL}" STREQUAL "PHOTONICSCIENCE_LIB_XISL-NOTFOUND")
-	#  MESSAGE(FATAL_ERROR "photonicscience : XISL lib not found, you can search it in cmake-gui or try to install it if it isn't here.")
-	#ENDIF()
+	FIND_LIBRARY(PHOTONICSCIENCE_LIB_XISL XISL "C:/XIS/SDK32")
+	IF("${PHOTONICSCIENCE_LIB_XISL}" STREQUAL "PHOTONICSCIENCE_LIB_XISL-NOTFOUND")
+	  MESSAGE(FATAL_ERROR "photonicscience : XISL lib not found, you can search it in cmake-gui or try to install it if it isn't here.")
+	ENDIF()
+	#FIND_LIBRARY(PHOTONICSCIENCE_LIB_IMGSTAR imagestar4022control "${CMAKE_CURRENT_SOURCE_DIR}/sdk/ImageStar4022_v2.5")
 
 	TARGET_LINK_LIBRARIES(limaphotonicscience limacore)
-	#TARGET_LINK_LIBRARIES(limaphotonicscience ${PHOTONICSCIENCE_LIB_XISL})
-
+	TARGET_LINK_LIBRARIES(limaphotonicscience ${PHOTONICSCIENCE_LIB_XISL})
+	#TARGET_LINK_LIBRARIES(limaphotonicscience ${PHOTONICSCIENCE_LIB_IMGSTAR}) 
 
 	SET_TARGET_PROPERTIES(limaphotonicscience PROPERTIES VERSION ${photonic_ver} SOVERSION "1")
     SET_TARGET_PROPERTIES(limaphotonicscience PROPERTIES PREFIX "lib")
