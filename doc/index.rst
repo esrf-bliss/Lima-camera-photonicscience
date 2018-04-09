@@ -7,70 +7,56 @@ PhotonicScience
 
 Introduction
 ````````````
-TODO
 
-Prerequisite Windows  ??
-`````````````````````````
-
-TODO
+  "Photonic Science is a high technology independent manufacturer of scientific detector systems covering the range of visible to x-ray and neutron detection. The camera technology offered is wide ranging, from CCD, EMCCD, CMOS to image intensified systems."
 
 The CCD camera 4022 has been tested at ESRF on beamline ID11.
 
+Prerequisite
+````````````
+
+TODO
+
 Installation & Module configuration
-````````````````````````````````````
+```````````````````````````````````
 
--  follow first the steps for the linux installation :ref:`linux_installation`
-
-The minimum configuration file is *config.inc* :
+Follow the generic instructions in :ref:`build_installation`. If using CMake directly, add the following flag:
 
 .. code-block:: sh
 
-  COMPILE_CORE=1
-  COMPILE_SIMULATOR=0
-  COMPILE_SPS_IMAGE=1
-  COMPILE_ESPIA=0
-  COMPILE_FRELON=0
-  COMPILE_MAXIPIX=0
-  COMPILE_PILATUS=0
-  COMPILE_BASLER=0
-  COMPILE_PHOTONICSCIENCE=1
-  COMPILE_CBF_SAVING=0
-  export COMPILE_CORE COMPILE_SPS_IMAGE COMPILE_SIMULATOR \
-         COMPILE_ESPIA COMPILE_FRELON COMPILE_MAXIPIX COMPILE_PILATUS \
-         COMPILE_BASLER COMPILE_PHOTONICSCIENCE COMPILE_CBF_SAVING
+ -DLIMACAMERA_PHOTONICSCIENCE=true
 
--  start the compilation :ref:`linux_compilation`
-
--  finally for the Tango server installation :ref:`tango_installation`
+For the Tango server installation, refers to :ref:`tango_installation`.
 
 Initialisation and Capabilities
 ````````````````````````````````
-In order to help people to understand how the camera plugin has been implemented in LImA this section
-provides some important information about the developer's choices.
+
+Implementing a new plugin for new detector is driven by the LIMA framework but the developer has some freedoms to choose which standard and specific features will be made available. This section is supposed to give you the correct information regarding how the camera is exported within the LIMA framework.
 
 Camera initialisation
 ......................
 
 TODO
 
-Std capabilites
+Std capabilities
 ................
 
-This plugin has been implement in respect of the mandatory capabilites but with some limitations which
+This plugin has been implemented in respect of the mandatory capabilites but with some limitations which
 are due to the camera and SDK features.  We only provide here extra information for a better understanding
 of the capabilities for Andor cameras.
 
 * HwDetInfo
-  
+
  TODO
 
 * HwSync
 
- TODO 
-  
+ TODO
 
-Optional capabilites
-........................
+
+Optional capabilities
+.....................
+
 In addition to the standard capabilities, we make the choice to implement some optional capabilities which
 are supported by the SDK and the I-Kon cameras. A Shutter control, a hardware ROI and a hardware Binning are available.
 
@@ -82,7 +68,7 @@ are supported by the SDK and the I-Kon cameras. A Shutter control, a hardware RO
 
  TODO
 
-* HwBin 
+* HwBin
 
  TODO
 
@@ -100,7 +86,7 @@ This is a python code example for a simple test:
   from Lima import PhotonicScience
   from lima import Core
 
-  #               camera library path 
+  #               camera library path
   cam = Xh.Camera('ImageStar4022_v2.5\imagestar4022control.dll')
   hwint = Xh.Interface(cam)
   ct = Core.CtControl(hwint)
@@ -124,8 +110,8 @@ This is a python code example for a simple test:
 
   # now ask for 2 sec. exposure and 10 frames
   acq.setAcqExpoTime(2)
-  acq.setNbImages(10) 
-  
+  acq.setNbImages(10)
+
   ct.prepareAcq()
   ct.startAcq()
 
@@ -134,9 +120,6 @@ This is a python code example for a simple test:
   while lastimg !=9:
     time.sleep(1)
     lastimg = ct.getStatus().ImageCounters.LastImageReady
- 
+
   # read the first image
   im0 = ct.ReadImage(0)
-
-
-  
