@@ -6,7 +6,7 @@
 {% endif %}
 
 package:
-  name: lima-camera-photonicscience-rtango
+  name: lima-camera-photonicscience-tango
   version: {{ version }}
 
 source:
@@ -18,12 +18,12 @@ build:
 
 requirements:
   build:
+    - ninja
     - cmake
-    - git
     - lima-core
   run:
     - lima-tango-server
-    - lima-camera-photonicscience
+    - lima-camera-photonicscience  {{ version }}
 
 about:
   home: https://github.com/esrf-bliss/Lima
