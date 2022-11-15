@@ -20,6 +20,7 @@ requirements:
     - python {{ python }}
     - sip 4.19* # API v12.7
     - lima-core
+    - imagestar-sdk
   build:
     - ninja
     - cmake
