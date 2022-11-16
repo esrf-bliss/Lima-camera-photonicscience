@@ -22,16 +22,17 @@
 #ifndef PHOTONICSCIENCEINTERFACE_H
 #define PHOTONICSCIENCEINTERFACE_H
 
+#include <photonicscience_export.h>
+
 #include "lima/HwInterface.h"
 #include "PhotonicScienceCamera.h"
-#include "PhotonicScienceCompatibility.h"
 
 namespace lima
 {
   namespace PhotonicScience
   {
     class Interface;
-    class LIBPHOTONICSCIENCE_API DetInfoCtrlObj : public HwDetInfoCtrlObj
+    class PHOTONICSCIENCE_EXPORT DetInfoCtrlObj : public HwDetInfoCtrlObj
     {
       DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj", "PhotonicScience");
 
@@ -57,7 +58,7 @@ namespace lima
       Camera& m_cam;
     };
 
-    class LIBPHOTONICSCIENCE_API SyncCtrlObj : public HwSyncCtrlObj
+    class PHOTONICSCIENCE_EXPORT SyncCtrlObj : public HwSyncCtrlObj
     {
       DEB_CLASS_NAMESPC(DebModCamera, "SyncCtrlObj", "PhotonicScience");
 
@@ -84,7 +85,7 @@ namespace lima
       Camera& m_cam;
     };
 
-    class LIBPHOTONICSCIENCE_API BinCtrlObj : public HwBinCtrlObj
+    class PHOTONICSCIENCE_EXPORT BinCtrlObj : public HwBinCtrlObj
     {
     public:
       BinCtrlObj(Camera& cam);
@@ -98,7 +99,7 @@ namespace lima
       Camera& m_cam;
     };
 
-    class LIBPHOTONICSCIENCE_API RoiCtrlObj : public HwRoiCtrlObj
+    class PHOTONICSCIENCE_EXPORT RoiCtrlObj : public HwRoiCtrlObj
     {
       DEB_CLASS_NAMESPC(DebModCamera, "RoiCtrlObj", "PhotonicScience");
 
@@ -114,7 +115,7 @@ namespace lima
       Camera& m_cam;
     };
 
-    class LIBPHOTONICSCIENCE_API Interface : public HwInterface
+    class PHOTONICSCIENCE_EXPORT Interface : public HwInterface
     {
       DEB_CLASS_NAMESPC(DebModCamera, "PhotonicScienceInterface", "PhotonicScience");
 
