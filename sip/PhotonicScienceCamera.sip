@@ -85,5 +85,8 @@ namespace PhotonicScience
     int readCurrentTemp() const;
     // *** intensifier control
     void setIntensifierGain(int gain);
+    
+  private:
+    Camera(const PhotonicScience::Camera&);
   };
 };
