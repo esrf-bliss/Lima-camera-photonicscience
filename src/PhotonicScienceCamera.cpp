@@ -67,13 +67,7 @@ Camera::Camera(const std::string &dllName,
   while(m_thread_running)
     m_cond.wait();
 
-  //Convert string to WideChar
-  int len = MultiByteToWideChar(CP_ACP,0,dllName.c_str(), dllName.length() + 1,0,0);
-  wchar_t* dllName_wchar = new wchar_t[len];
-  MultiByteToWideChar(CP_ACP, 0, dllName.c_str(), dllName.length() + 1,dllName_wchar,len);
-  
-  m_hDLL = LoadLibrary(dllName_wchar);
-  delete [] dllName_wchar;
+  m_hDLL = LoadLibrary(dllName.c_str());
 
   if(!m_hDLL)
     THROW_HW_ERROR(Error) << "Can't load library: " << dllName;
