@@ -53,18 +53,6 @@ if (CAMERA_MASTER_PROJECT)
   find_package(Lima REQUIRED COMPONENTS devel tools)
 endif()
 
-
-target_include_directories( PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/sdk/ImageStar4022_v2.5")
-find_library(IMAGESTAR_LIB NAMES imagestar4022control
-  PATHS "${CMAKE_CURRENT_SOURCE_DIR}/sdk/ImageStar4022_v2.5"
-  NO_CMAKE_FIND_ROOT_PATH
-  NO_DEFAULT_PATH)
-
-if("${IMAGESTAR_LIB}" STREQUAL "IMAGESTAR_LIB-NOTFOUND")
-  message(FATAL_ERROR "${NAME} : XISL lib not found")
-endif()
-
-
 # CMake additional macros
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${LIMA_CMAKE_INCLUDE_DIRS} ${CMAKE_MODULE_PATH})
 
@@ -83,6 +71,7 @@ if (CAMERA_MASTER_PROJECT)
   endif()
 endif()
 
+find_package(ImageStar REQUIRED)
 
 file(GLOB_RECURSE PHOTONICSCIENCE_INCS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
 
@@ -108,12 +97,9 @@ target_include_directories(photonicscience
     PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"           # For export header
     PUBLIC "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 )
-target_include_directories(photonicscience PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sdk/ImageStar4022_v2.5>")
 
 target_link_libraries(photonicscience PUBLIC limacore)
-
-target_link_libraries(photonicscience PUBLIC ${IMAGESTAR_LIB})
-
+target_link_libraries(photonicscience PRIVATE ImageStar::ImageStar)
 
 if(WIN32)
   target_compile_definitions(photonicscience
